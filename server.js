@@ -4,7 +4,8 @@ const mongoose = require("mongoose");
 
 const dotenv = require("dotenv");
 
-const productRoutes = require("./Routes/ProductRoutes");
+const productRoutes = require("./Routes/productRoutes");
+const authRoutes = require("./Routes/authRoutes");
 
 dotenv.config();
 
@@ -14,16 +15,18 @@ app.use(express.json());
 
 app.use("/", productRoutes);
 
+app.use("/auth", authRoutes);
+
 mongoose
-  .connect(process.env.MONGOOB_URL)
+  .connect(process.env.MONGODB_URL)
 
   .then(() => {
-    console.log(" Database connected");
+    console.log("Database connected");
 
     app.listen(3000, () => {
-      console.log(" Server is running 3000");
+      console.log("Server is running in 3000");
     });
   })
   .catch((error) => {
-    console.error(" Error connecting to database:", error.message);
+    console.log("Error connecting to database:", error.message);
   });
