@@ -3,11 +3,12 @@ const {
   getAllProducts,
   getProductById,
   createProduct,
-  deleteProduct,
   updateProduct,
-} = require("../controllers/productController");
+  deleteProduct,
+} = require("../controllers/productcontroller");
 
-const { isAuth, isAdmin } = require("../middlewares/authmiddlewares");
+const { isAuth } = require("../middlewares/authmiddlewares");
+const { isAdmin } = require("../middlewares/authmiddlewares");
 
 const productRoutes = express.Router();
 

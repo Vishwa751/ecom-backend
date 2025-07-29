@@ -55,25 +55,8 @@ const addToCart = async (req, res, next) => {
   }
 };
 
-async function calculateTotalPrice(products) {
-  let total = 0;
-  for (const item of products) {
-    const product = await Product.findById(item.productId);
-
-    if (product) {
-      total += product.price * item.quantity;
-    }
-  }
-  return total;
-}
 const getCart = async (req, res, next) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
-    }
-
     const userId = req.user._id;
 
     let cart = await Cart.findOne({ userId }).populate(
@@ -88,11 +71,12 @@ const getCart = async (req, res, next) => {
         totalPrice: 0,
       });
       await cart.save();
-      return res.status(200).json({
-        success: true,
-        cart,
-      });
     }
+
+    res.status(200).json({
+      success: true,
+      cart,
+    });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({
@@ -100,6 +84,19 @@ const getCart = async (req, res, next) => {
     });
   }
 };
+
+async function calculateTotalPrice(products) {
+  let total = 0;
+  for (const item of products) {
+    const product = await Product.findById(item.productId);
+
+    if (product) {
+      total += product.price * item.quantity;
+    }
+  }
+  return total;
+}
+
 const clearCart = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -110,10 +107,10 @@ const clearCart = async (req, res, next) => {
         message: "Cart not found",
       });
     }
+
     cart.products = [];
     cart.totalPrice = 0;
     await cart.save();
-
     res.status(200).json({
       success: true,
       message: "Cart cleared successfully",
@@ -124,22 +121,101 @@ const clearCart = async (req, res, next) => {
       message: "Something went wrong",
     });
   }
-
-  await Cart.deleteOne({ userId });
-
-  res.status(200).json({
-    success: true,
-    message: "Cart cleared",
-  });
 };
 
-async function calculateTotalPrice(products) {
-  let total = 0;
-  for (const item of products) {
-    const product = await Product.findById(item.productId);
-    if (product) {
-      total += product.price * item.quantity;
+const updateQuantity = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { productId, quantity } = req.body;
+
+    if (!productId || !quantity || quantity <= 0) {
+      return res.status(400).json({
+        message: "Invalid product ID or quantity",
+      });
     }
+
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({
+        message: "Cart not found",
+      });
+    }
+
+    const productIndex = cart.products.findIndex(
+      (item) => item.productId.toString() === productId
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({
+        message: "Product not found in cart",
+      });
+    }
+
+    cart.products[productIndex].quantity = quantity;
+
+    cart.totalPrice = await calculateTotalPrice(cart.products);
+    await cart.save();
+
+    res.status(200).json({
+      success: true,
+      cart,
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      message: "Something went wrong",
+    });
   }
-  return total;
-}
+};
+
+const removeFromCart = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({
+        message: "Product ID is required",
+      });
+    }
+
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({
+        message: "Cart not found",
+      });
+    }
+
+    const productIndex = cart.products.findIndex(
+      (item) => item.productId.toString() === productId
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({
+        message: "Product not found in cart",
+      });
+    }
+
+    cart.products.splice(productIndex, 1);
+    cart.totalPrice = await calculateTotalPrice(cart.products);
+    await cart.save();
+
+    res.status(200).json({
+      success: true,
+      cart,
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      message: "Something went wrong",
+    });
+  }
+};
+
+module.exports = {
+  addToCart,
+  getCart,
+  clearCart,
+  updateQuantity,
+  removeFromCart,
+};
