@@ -5,7 +5,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
-} = require("../controllers/productcontroller");
+} = require("../controllers/productController");
 
 const { isAuth } = require("../middlewares/authmiddlewares");
 const { isAdmin } = require("../middlewares/authmiddlewares");
